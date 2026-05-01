@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/**
+ * Universal content width. Default: full width (edge-to-edge within horizontal padding).
+ * Override globally e.g. `65ch` or `min(100%, 80rem)` in DevTools or a parent wrapper.
+ */
+:root {
+  --panui-content-max-width: 100%;
+}
+
+@layer components {
+  .panui-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--panui-content-max-width);
+    margin-inline: auto;
+  }
+}

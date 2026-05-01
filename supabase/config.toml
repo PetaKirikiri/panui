@@ -1,0 +1,22 @@
+# Browser calls use the public anon key; gateway JWT errors often omit CORS → "Failed to fetch".
+[functions.suggest-subcategory-labels]
+verify_jwt = false
+
+[functions.list-r2-images]
+verify_jwt = false
+
+[functions.te-aka-audio]
+verify_jwt = false
+
+[functions.lookup-te-aka]
+verify_jwt = false
+
+[functions.match-te-aka-sense]
+verify_jwt = false
+
+# Google Calendar: admin-only; verify JWT, service account in secrets
+[functions.google-calendar-list]
+verify_jwt = true
+
+[functions.google-class-sync]
+verify_jwt = true

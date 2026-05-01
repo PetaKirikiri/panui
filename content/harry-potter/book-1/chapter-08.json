@@ -1,0 +1,18 @@
+{
+  "bookId": "harry-potter-1",
+  "chapterId": "chapter-08",
+  "title": "The Potions Master",
+  "batches": [
+    {
+      "id": "hp1-ch08-placeholder",
+      "order": 1,
+      "label": "Placeholder",
+      "english": [
+        "Placeholder for \"The Potions Master\". Replace with bilingual batches from import or edit this JSON."
+      ],
+      "maori": [
+        "He wāhi noa mō \"The Potions Master\". Whakakapi ki ngā rōraho reoruahi mai te kawemai, whakatikatika rānei i tēnei JSON."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "bookId": "harry-potter-1",
+  "chapterId": "chapter-07",
+  "title": "The Sorting Hat",
+  "batches": [
+    {
+      "id": "hp1-ch07-placeholder",
+      "order": 1,
+      "label": "Placeholder",
+      "english": [
+        "Placeholder for \"The Sorting Hat\". Replace with bilingual batches from import or edit this JSON."
+      ],
+      "maori": [
+        "He wāhi noa mō \"The Sorting Hat\". Whakakapi ki ngā rōraho reoruahi mai te kawemai, whakatikatika rānei i tēnei JSON."
+      ]
+    }
+  ]
+}

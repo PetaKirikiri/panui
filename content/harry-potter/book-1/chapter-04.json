@@ -1,0 +1,18 @@
+{
+  "bookId": "harry-potter-1",
+  "chapterId": "chapter-04",
+  "title": "The Keeper of the Keys",
+  "batches": [
+    {
+      "id": "hp1-ch04-placeholder",
+      "order": 1,
+      "label": "Placeholder",
+      "english": [
+        "Placeholder for \"The Keeper of the Keys\". Replace with bilingual batches from import or edit this JSON."
+      ],
+      "maori": [
+        "He wāhi noa mō \"The Keeper of the Keys\". Whakakapi ki ngā rōraho reoruahi mai te kawemai, whakatikatika rānei i tēnei JSON."
+      ]
+    }
+  ]
+}
