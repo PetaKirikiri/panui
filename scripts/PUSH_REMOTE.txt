@@ -1,0 +1,20 @@
+Push this repo to GitHub (or any Git host)
+
+Prerequisites: at least one commit exists (git log -1).
+
+1. Create a new EMPTY repository on GitHub (no README, no .gitignore).
+2. From the project directory:
+
+   git remote add origin https://github.com/YOUR_USER/YOUR_REPO.git
+   git branch -M main
+   git push -u origin main
+
+SSH:
+
+   git remote add origin git@github.com:YOUR_USER/YOUR_REPO.git
+   git push -u origin main
+
+If "remote origin already exists":
+
+   git remote -v
+   git remote set-url origin NEW_URL
