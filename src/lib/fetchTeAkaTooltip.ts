@@ -274,7 +274,11 @@ export function fetchTeAkaTooltip(lemma: string): Promise<TeAkaTooltipData | nul
   let p = inflight.get(key)
   if (!p) {
     p = loadTooltip(key).then((r) => {
-      hitCache.set(key, r)
+      // Do not cache failed or empty tooltips — a bad first attempt (e.g. before Edge deploy)
+      // would otherwise stick for the whole tab (see session_memory_cache in debug logs).
+      if (r != null && r.entries.length > 0) {
+        hitCache.set(key, r)
+      }
       return r
     })
     void p.finally(() => inflight.delete(key))

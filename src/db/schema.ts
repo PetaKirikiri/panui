@@ -98,6 +98,8 @@ export const storySentences = pgTable('story_sentences', {
   chapterNumber: integer('chapter_number'),
   pageNumber: integer('page_number'),
   paragraphNumber: integer('paragraph_number'),
+  /** 0-based chunk within (chapter, page); matches reader UI row index. Usually paragraph_number - 1. */
+  chunkIndex: integer('chunk_index').notNull().default(0),
   sentenceNumber: integer('sentence_number'),
   sentenceText: text('sentence_text').notNull(),
   tokensArray: jsonb('tokens_array').$type<SentenceToken[] | null>(),

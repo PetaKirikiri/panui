@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { parseMaoridictionaryWordPageHtml } from './teAkaMaoridictionaryScrape'
+import {
+  extractFirstCanonicalWordUrlFromSearchHtml,
+  parseMaoridictionaryWordPageHtml,
+} from './teAkaMaoridictionaryScrape'
 
 /** Snippet from live `GET /word/horomi` — nested divs under `.flex-1.detail` (balanced). */
 const HOROMI_PAGE_SNIPPET = `<!DOCTYPE html><html><body>
@@ -37,6 +40,34 @@ describe('parseMaoridictionaryWordPageHtml', () => {
     expect(r!.entries[0]!.exampleMi).toContain('horomi')
     expect(r!.entries[0]!.exampleEn).toContain('swallowing')
     expect(r!.audioUrl).toContain('1441.mp3')
+  })
+
+  it('parses short entry with empty-class div after gloss (e.g. wai)', () => {
+    const html = `<!DOCTYPE html><html><body><div class="content-def">
+<h2 class="title  ">wai</h2>
+<div id="d10884" class="flex mt-5 sm:mt-8">
+<div class="flex-1 detail">
+<p class="mb-0"><strong>1.</strong>
+<strong>(noun)</strong>
+traditional song (short for <i>waiata</i>).
+<div class="">
+</div>
+</div>
+</div>
+</div></body></html>`
+    const r = parseMaoridictionaryWordPageHtml(html, 'wai')
+    expect(r).not.toBeNull()
+    expect(r!.entries).toHaveLength(1)
+    expect(r!.entries[0]!.pos).toBe('noun')
+    expect(r!.entries[0]!.definition).toContain('waiata')
+  })
+
+  it('extracts first search-result permalink (numeric /word/id)', () => {
+    const html =
+      'prefix <a href="https://maoridictionary.co.nz/word/9432" title="Link to this word" class="x">'
+    expect(extractFirstCanonicalWordUrlFromSearchHtml(html)).toBe(
+      'https://maoridictionary.co.nz/word/9432',
+    )
   })
 
   it('returns null for zero-hit search-style HTML', () => {

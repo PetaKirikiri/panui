@@ -364,6 +364,25 @@ function WordInsightPopover({
   )
 }
 
+/** Canonical word page on Te Aka (matches scraper / Edge lookup). */
+function teAkaWordPageUrl(lemma: string): string {
+  const q = lemma.trim().normalize('NFC').toLowerCase()
+  return `https://maoridictionary.co.nz/word/${encodeURIComponent(q)}`
+}
+
+function TeAkaOpenSiteButton({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-3 block w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-center text-xs font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      Open on Te Aka website
+    </a>
+  )
+}
+
 function TeAkaPopoverBody({
   data,
   loading,
@@ -373,15 +392,30 @@ function TeAkaPopoverBody({
   loading: boolean
   lemmaHint?: string
 }) {
+  const lemmaForUrl = String(data?.lemma ?? lemmaHint ?? '').trim()
+  const hrefFromData =
+    data?.sourceUrl?.trim() ||
+    (lemmaForUrl.length >= 2 ? teAkaWordPageUrl(lemmaForUrl) : '')
+  const hrefWhileLoading =
+    lemmaHint && lemmaHint.trim().length >= 2 ? teAkaWordPageUrl(lemmaHint) : ''
+
   if (loading) {
-    return <p className="text-xs text-gray-500">Loading dictionary…</p>
+    return (
+      <div>
+        <p className="text-xs text-gray-500">Loading dictionary…</p>
+        {hrefWhileLoading ? <TeAkaOpenSiteButton href={hrefWhileLoading} /> : null}
+      </div>
+    )
   }
   if (!data?.entries.length) {
     return (
-      <p className="text-xs text-gray-600">
-        No Te Aka entry found
-        {lemmaHint ? ` for “${lemmaHint}”.` : '.'}
-      </p>
+      <div>
+        <p className="text-xs text-gray-600">
+          No Te Aka entry found
+          {lemmaHint ? ` for “${lemmaHint}”.` : '.'}
+        </p>
+        {hrefFromData ? <TeAkaOpenSiteButton href={hrefFromData} /> : null}
+      </div>
     )
   }
   return (
@@ -428,16 +462,7 @@ function TeAkaPopoverBody({
           )
         })}
       </ul>
-      {data.sourceUrl ? (
-        <a
-          className="inline-block text-xs font-medium text-blue-700 underline"
-          href={data.sourceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Te Aka — Māori Dictionary
-        </a>
-      ) : null}
+      {hrefFromData ? <TeAkaOpenSiteButton href={hrefFromData} /> : null}
     </div>
   )
 }

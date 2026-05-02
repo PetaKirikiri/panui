@@ -122,6 +122,7 @@ async function insertSentencesBatch(
     chapter_number: d.chapter_number,
     page_number: d.page_number,
     paragraph_number: d.paragraph_number,
+    chunk_index: d.chunk_index ?? Math.max(0, d.paragraph_number - 1),
     sentence_number: d.sentence_number,
     sentence_text: d.sentence_text,
   }))
@@ -137,10 +138,13 @@ async function insertSentencesBatch(
 async function recomputeSourceText(client: SupabaseClient, storySourceId: number): Promise<string> {
   const { data, error } = await client
     .from('story_sentences')
-    .select('sentence_text, chapter_number, page_number, paragraph_number, sentence_number')
+    .select(
+      'sentence_text, chapter_number, page_number, paragraph_number, sentence_number, chunk_index',
+    )
     .eq('story_source_id', storySourceId)
     .order('chapter_number', { ascending: true })
     .order('page_number', { ascending: true })
+    .order('chunk_index', { ascending: true })
     .order('paragraph_number', { ascending: true })
     .order('sentence_number', { ascending: true })
 

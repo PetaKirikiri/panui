@@ -654,11 +654,15 @@ export async function lookupTeAkaEdge(
         secondAttemptIsNull: didFoldRetry ? secondAttempt === null : null,
         secondEntryLen:
           didFoldRetry && secondAttempt != null ? (secondAttempt.entries?.length ?? 0) : null,
+        returningEmptyEnvelope: first != null || secondAttempt != null,
       },
       timestamp: Date.now(),
     }),
   }).catch(() => {})
   // #endregion
+  // Return successful empty envelope so clients do not treat "no senses" as transport failure.
+  if (secondAttempt != null) return secondAttempt
+  if (first != null) return first
   return null
 }
 

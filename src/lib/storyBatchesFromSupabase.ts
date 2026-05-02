@@ -9,6 +9,7 @@ type SentenceRow = {
   chapter_number: number | null
   page_number: number | null
   paragraph_number: number | null
+  chunk_index: number | null
   sentence_number: number | null
   sentence_text: string
   tokens_array?: unknown
@@ -83,17 +84,24 @@ function rowsForChapterPage(rows: SentenceRow[], chapter: number, page: number):
   )
 }
 
+function rowChunkIndex(r: SentenceRow): number {
+  const c = numField(r.chunk_index)
+  if (c != null) return c
+  const p = r.paragraph_number ?? 1
+  return Math.max(0, p - 1)
+}
+
 function rowsToParagraphs(rows: SentenceRow[]): string[] {
-  const byPara = new Map<number, SentenceRow[]>()
+  const byChunk = new Map<number, SentenceRow[]>()
   for (const r of rows) {
-    const pn = r.paragraph_number ?? 0
-    const list = byPara.get(pn) ?? []
+    const kn = rowChunkIndex(r)
+    const list = byChunk.get(kn) ?? []
     list.push(r)
-    byPara.set(pn, list)
+    byChunk.set(kn, list)
   }
-  const paraNums = [...byPara.keys()].sort((a, b) => a - b)
-  return paraNums.map((pn) => {
-    const rs = (byPara.get(pn) ?? []).sort(
+  const chunkKeys = [...byChunk.keys()].sort((a, b) => a - b)
+  return chunkKeys.map((kn) => {
+    const rs = (byChunk.get(kn) ?? []).sort(
       (a, b) => (a.sentence_number ?? 0) - (b.sentence_number ?? 0),
     )
     return rs.map((r) => r.sentence_text).join(' ')
@@ -151,16 +159,16 @@ function mergeSentenceTokenRows(sortedRows: SentenceRow[]): SentenceToken[] {
 
 /** One merged token stream per paragraph (matches `rowsToParagraphs` grouping). */
 function rowsToMiTokensByParagraph(rows: SentenceRow[]): SentenceToken[][] {
-  const byPara = new Map<number, SentenceRow[]>()
+  const byChunk = new Map<number, SentenceRow[]>()
   for (const r of rows) {
-    const pn = r.paragraph_number ?? 0
-    const list = byPara.get(pn) ?? []
+    const kn = rowChunkIndex(r)
+    const list = byChunk.get(kn) ?? []
     list.push(r)
-    byPara.set(pn, list)
+    byChunk.set(kn, list)
   }
-  const paraNums = [...byPara.keys()].sort((a, b) => a - b)
-  return paraNums.map((pn) => {
-    const rs = (byPara.get(pn) ?? []).sort(
+  const chunkKeys = [...byChunk.keys()].sort((a, b) => a - b)
+  return chunkKeys.map((kn) => {
+    const rs = (byChunk.get(kn) ?? []).sort(
       (a, b) => (a.sentence_number ?? 0) - (b.sentence_number ?? 0),
     )
     return mergeSentenceTokenRows(rs)
@@ -171,11 +179,12 @@ async function fetchSentencesForSource(sourceId: number): Promise<SentenceRow[]>
   const { data, error } = await supabase
     .from('story_sentences')
     .select(
-      'chapter_number, page_number, paragraph_number, sentence_number, sentence_text, tokens_array',
+      'chapter_number, page_number, paragraph_number, chunk_index, sentence_number, sentence_text, tokens_array',
     )
     .eq('story_source_id', sourceId)
     .order('chapter_number', { ascending: true })
     .order('page_number', { ascending: true })
+    .order('chunk_index', { ascending: true })
     .order('paragraph_number', { ascending: true })
     .order('sentence_number', { ascending: true })
 
@@ -185,6 +194,7 @@ async function fetchSentencesForSource(sourceId: number): Promise<SentenceRow[]>
     chapter_number: numField(raw.chapter_number),
     page_number: numField(raw.page_number),
     paragraph_number: numField(raw.paragraph_number),
+    chunk_index: numField(raw.chunk_index),
     sentence_number: numField(raw.sentence_number),
     sentence_text: String(raw.sentence_text ?? ''),
     tokens_array: raw.tokens_array,

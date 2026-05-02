@@ -1,10 +1,26 @@
 /**
  * Fetch + parse Te Aka (maoridictionary.co.nz) word pages for {@link lookup-te-aka} Edge
- * and for unit tests. Search URLs often return “no results” while /word/{lemma} works.
+ * and for unit tests.
+ *
+ * **Slug miss:** `/word/whakahi` (no macron) is often a “We couldn't find that” page while the site
+ * search still lists `whakahī`. We then follow the first search result’s numeric `/word/{id}` URL.
  */
 import type { TeAkaEntry, TeAkaResult } from './teAkaWordRegistry'
 
 const SITE_ORIGIN = 'https://maoridictionary.co.nz'
+
+const TE_AKA_FETCH_HEADERS: HeadersInit = {
+  Accept: 'text/html,application/xhtml+xml',
+  'User-Agent': 'Mozilla/5.0 (compatible; PanuiTeAkaScrape/1.0; +https://github.com/)',
+}
+
+/** Exported for tests — first “permalink” in search results (`title="Link to this word"`). */
+export function extractFirstCanonicalWordUrlFromSearchHtml(html: string): string | null {
+  const m = html.match(
+    /href="(https:\/\/maoridictionary\.co\.nz\/word\/\d+)"\s+title="Link to this word"/i,
+  )
+  return m?.[1] ?? null
+}
 
 function stripHtmlToText(html: string): string {
   return html
@@ -16,10 +32,14 @@ function stripHtmlToText(html: string): string {
     .trim()
 }
 
-/** First gloss paragraph: `<p class="mb-0">` only (not `mb-0 mt-2` example lines). Te Aka often omits `</p>` before `<div class="mt-4">`. */
+/** First gloss paragraph: `<p class="mb-0">` only (not `mb-0 mt-2` example lines). Te Aka often omits `</p>` before a following `<div>`. */
 function extractGlossParagraphHtml(detailInner: string): string | null {
   const stopAtMt4 = detailInner.match(/<p class="mb-0"\s*>([\s\S]*?)(?=<div\s+class="mt-4\b)/i)
   if (stopAtMt4?.[1]) return stopAtMt4[1].trim()
+
+  /** Short entries use `class=""` wrapper instead of `mt-4` (e.g. /word/wai). */
+  const stopAtAnyDiv = detailInner.match(/<p class="mb-0"\s*>([\s\S]*?)(?=<div\b)/i)
+  if (stopAtAnyDiv?.[1]?.trim()) return stopAtAnyDiv[1].trim()
 
   const closed = detailInner.match(/<p class="mb-0"\s*>([\s\S]*?)<\/p>/i)
   return closed?.[1]?.trim() ?? null
@@ -157,19 +177,157 @@ export async function fetchMaoridictionaryWordPage(lemma: string): Promise<strin
   const lc = lemma.trim().normalize('NFC').toLowerCase()
   if (!lc) return null
   const url = `${SITE_ORIGIN}/word/${encodeURIComponent(lc)}`
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'text/html,application/xhtml+xml',
-      'User-Agent': 'Mozilla/5.0 (compatible; PanuiTeAkaScrape/1.0; +https://github.com/)',
-    },
-  })
+  return fetchMaoridictionaryUrl(url)
+}
+
+async function fetchMaoridictionaryUrl(url: string): Promise<string | null> {
+  const res = await fetch(url, { headers: TE_AKA_FETCH_HEADERS })
   if (!res.ok) return null
   return await res.text()
 }
 
-/** Full lookup: fetch `/word/{lemma}` + parse (for Edge function + integration tests with mocked fetch). */
+async function fetchMaoridictionarySearchPage(keywords: string): Promise<string | null> {
+  const q = keywords.trim().normalize('NFC').toLowerCase()
+  if (!q) return null
+  return fetchMaoridictionaryUrl(`${SITE_ORIGIN}/search?keywords=${encodeURIComponent(q)}`)
+}
+
+function isTeAkaSlugMissPage(html: string): boolean {
+  return (
+    /We couldn't find that/i.test(html) && !/<div class="flex-1 detail">/i.test(html)
+  )
+}
+
+/** Full lookup: `/word/{lemma}`; on Te Aka slug miss, search + follow first result `/word/{id}`. */
 export async function scrapeTeAkaMaoridictionaryLemma(lemma: string): Promise<TeAkaResult | null> {
-  const html = await fetchMaoridictionaryWordPage(lemma)
-  if (!html) return null
-  return parseMaoridictionaryWordPageHtml(html, lemma)
+  const rawLemma = lemma.trim()
+  const lc = rawLemma.normalize('NFC').toLowerCase()
+  if (!lc) return null
+
+  const primaryHtml = await fetchMaoridictionaryWordPage(lc)
+  if (!primaryHtml) return null
+
+  let result = parseMaoridictionaryWordPageHtml(primaryHtml, rawLemma)
+  if (result?.entries?.length) {
+    // #region agent log
+    void fetch('http://127.0.0.1:7812/ingest/b0a492bc-27c1-4e3b-8c3d-6d620b84c1db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'e1a103',
+      },
+      body: JSON.stringify({
+        sessionId: 'e1a103',
+        hypothesisId: 'H-direct-slash-word',
+        location: 'teAkaMaoridictionaryScrape.ts:scrapeTeAkaMaoridictionaryLemma',
+        message: 'Te Aka parse ok from direct /word/{lemma}',
+        data: { lemma: lc, entryCount: result.entries.length },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+    return result
+  }
+
+  if (!isTeAkaSlugMissPage(primaryHtml)) {
+    // #region agent log
+    void fetch('http://127.0.0.1:7812/ingest/b0a492bc-27c1-4e3b-8c3d-6d620b84c1db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'e1a103',
+      },
+      body: JSON.stringify({
+        sessionId: 'e1a103',
+        hypothesisId: 'H-empty-not-miss',
+        location: 'teAkaMaoridictionaryScrape.ts:scrapeTeAkaMaoridictionaryLemma',
+        message: 'No entries but HTML is not Te Aka slug miss — no search fallback',
+        data: { lemma: lc },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+    return result
+  }
+
+  const searchHtml = await fetchMaoridictionarySearchPage(lc)
+  if (!searchHtml) {
+    // #region agent log
+    void fetch('http://127.0.0.1:7812/ingest/b0a492bc-27c1-4e3b-8c3d-6d620b84c1db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'e1a103',
+      },
+      body: JSON.stringify({
+        sessionId: 'e1a103',
+        hypothesisId: 'H-search-fetch-fail',
+        location: 'teAkaMaoridictionaryScrape.ts:scrapeTeAkaMaoridictionaryLemma',
+        message: 'Te Aka search page fetch failed',
+        data: { lemma: lc },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+    return result
+  }
+
+  const resolvedUrl = extractFirstCanonicalWordUrlFromSearchHtml(searchHtml)
+  if (!resolvedUrl) {
+    // #region agent log
+    void fetch('http://127.0.0.1:7812/ingest/b0a492bc-27c1-4e3b-8c3d-6d620b84c1db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'e1a103',
+      },
+      body: JSON.stringify({
+        sessionId: 'e1a103',
+        hypothesisId: 'H-search-no-permalink',
+        location: 'teAkaMaoridictionaryScrape.ts:scrapeTeAkaMaoridictionaryLemma',
+        message: 'Search HTML had no Link to this word target',
+        data: { lemma: lc },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+    return result
+  }
+
+  const followHtml = await fetchMaoridictionaryUrl(resolvedUrl)
+  if (!followHtml) return result
+
+  result = parseMaoridictionaryWordPageHtml(followHtml, rawLemma)
+  if (result?.entries?.length) {
+    const canonical = result.word.trim().normalize('NFC').toLowerCase()
+    result = {
+      ...result,
+      sourceUrl: `${SITE_ORIGIN}/word/${encodeURIComponent(canonical)}`,
+      scraperBuild: 'panui-maoridictionary-scrape-v2-search-fallback',
+    }
+    // #region agent log
+    void fetch('http://127.0.0.1:7812/ingest/b0a492bc-27c1-4e3b-8c3d-6d620b84c1db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': 'e1a103',
+      },
+      body: JSON.stringify({
+        sessionId: 'e1a103',
+        hypothesisId: 'H-search-fallback-ok',
+        location: 'teAkaMaoridictionaryScrape.ts:scrapeTeAkaMaoridictionaryLemma',
+        message: 'Te Aka entries loaded after search fallback',
+        data: {
+          lemma: lc,
+          resolvedUrl,
+          canonicalHeadword: canonical,
+          entryCount: result.entries.length,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+  }
+
+  return result
 }

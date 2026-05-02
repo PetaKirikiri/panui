@@ -597,6 +597,8 @@ export type SentenceInsertDraft = {
   chapter_number: number
   page_number: number
   paragraph_number: number
+  /** 0-based chunk within the page (reader row index). Defaults from paragraph_number - 1 when inserting. */
+  chunk_index?: number
   sentence_number: number
   sentence_text: string
 }
@@ -613,6 +615,7 @@ export function segmentsToSentenceDrafts(
       chapter_number: chapterNumber,
       page_number: s.pageNumber,
       paragraph_number: s.paragraphNumber,
+      chunk_index: Math.max(0, s.paragraphNumber - 1),
       sentence_number: 1,
       sentence_text: s.english,
     })
@@ -620,6 +623,7 @@ export function segmentsToSentenceDrafts(
       chapter_number: chapterNumber,
       page_number: s.pageNumber,
       paragraph_number: s.paragraphNumber,
+      chunk_index: Math.max(0, s.paragraphNumber - 1),
       sentence_number: 1,
       sentence_text: s.maori,
     })
@@ -638,6 +642,7 @@ export function readerParagraphsToDrafts(
     chapter_number: chapterNumber,
     page_number: pageNumber,
     paragraph_number: i + 1,
+    chunk_index: i,
     sentence_number: 1,
     sentence_text,
   }))
