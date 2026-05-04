@@ -1,19 +1,9 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../context/authContext'
 import { ReaderViewModeProvider } from '../context/ReaderViewModeProvider'
 import { useReaderViewMode } from '../hooks/useReaderViewMode'
 import { AppSidebar } from './AppSidebar'
-
-const SIDEBAR_KEY = 'panui:sidebar-expanded'
-
-function readSidebarExpanded(): boolean {
-  if (typeof window === 'undefined') return true
-  const v = sessionStorage.getItem(SIDEBAR_KEY)
-  if (v === '0') return false
-  if (v === '1') return true
-  return true
-}
+import { PanuiProductBrand } from './PanuiProductBrand'
 
 function ReaderViewToolbar() {
   const location = useLocation()
@@ -66,35 +56,12 @@ function ReaderViewToolbar() {
 export function AppShell() {
   const location = useLocation()
   const { user, loading: authLoading, signOut } = useAuth()
-  const [sidebarExpanded, setSidebarExpanded] = useState(readSidebarExpanded)
-
-  const toggleSidebar = useCallback(() => {
-    setSidebarExpanded((e) => !e)
-  }, [])
-
-  useEffect(() => {
-    sessionStorage.setItem(SIDEBAR_KEY, sidebarExpanded ? '1' : '0')
-  }, [sidebarExpanded])
 
   return (
     <ReaderViewModeProvider>
       <div className="flex h-screen flex-col overflow-hidden bg-white">
         <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 px-3 py-3">
-          <button
-            type="button"
-            className="rounded-md p-2 text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            aria-expanded={sidebarExpanded}
-            aria-controls="panui-sidebar"
-            aria-label={sidebarExpanded ? 'Collapse sidebar' : 'Expand sidebar'}
-            onClick={toggleSidebar}
-          >
-            <span aria-hidden className="block text-lg leading-none">
-              ☰
-            </span>
-          </button>
-          <Link to="/" className="text-lg font-semibold tracking-tight text-gray-900">
-            pānui
-          </Link>
+          <PanuiProductBrand />
           <span className="hidden text-sm text-gray-500 sm:inline">
             Assistive bilingual reader
           </span>
@@ -127,7 +94,7 @@ export function AppShell() {
         </header>
 
         <div className="flex min-h-0 flex-1">
-          <AppSidebar expanded={sidebarExpanded} onToggle={toggleSidebar} />
+          <AppSidebar />
           <main id="panui-main" className="min-h-0 min-w-0 flex-1 overflow-y-auto">
             <Outlet />
           </main>
