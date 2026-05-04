@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { isLikelyInAppWebView } from '../lib/ecosystemShell'
 
 export type FloatingAddContext =
   | { mode: 'static'; bookId: string; chapterId: string }
@@ -48,6 +49,10 @@ export function FloatingAddNav({ context }: Props) {
       `${kind === 'chapter' ? 'Chapter' : kind === 'page' ? 'Page' : 'Paragraph'}: stub logged to console (DB writes next).`,
     )
     setOpen(false)
+  }
+
+  if (typeof navigator !== 'undefined' && isLikelyInAppWebView()) {
+    return null
   }
 
   return (
