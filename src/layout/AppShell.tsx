@@ -3,6 +3,7 @@ import { useAuth } from '../context/authContext'
 import { ReaderViewModeProvider } from '../context/ReaderViewModeProvider'
 import { useReaderViewMode } from '../hooks/useReaderViewMode'
 import { AppSidebar } from './AppSidebar'
+import { EcosystemAppSwitcher } from './EcosystemAppSwitcher'
 import { PanuiProductBrand } from './PanuiProductBrand'
 
 function ReaderViewToolbar() {
@@ -67,6 +68,7 @@ export function AppShell() {
           </span>
           <span className="flex-1" />
           <ReaderViewToolbar />
+          <EcosystemAppSwitcher currentWordmark="pānui" />
           {authLoading ? null : user ? (
             <>
               <span
