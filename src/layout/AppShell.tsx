@@ -68,7 +68,7 @@ export function AppShell() {
           </span>
           <span className="flex-1" />
           <ReaderViewToolbar />
-          <EcosystemAppSwitcher currentWordmark="pānui" />
+          <EcosystemAppSwitcher />
           {authLoading ? null : user ? (
             <>
               <span

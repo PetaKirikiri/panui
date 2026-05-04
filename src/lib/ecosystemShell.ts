@@ -1,8 +1,29 @@
-export type EcosystemLink = { key: string; label: string; href: string }
+export type EcosystemProductKey = 'akomanga' | 'maumahara' | 'panui' | 'mata'
 
-/** Same-host links when Akomanga proxies `/mata`, `/maumahara`, `/panui`. */
+export type EcosystemLink = { key: EcosystemProductKey; label: string; href: string }
+
+/** Production: set to Akomanga origin when Pānui is on its own Vercel URL. */
+export function ecosystemShellOrigin(): string {
+  const raw = import.meta.env.VITE_ECOSYSTEM_SHELL_ORIGIN?.trim()
+  if (raw) {
+    try {
+      return new URL(raw).origin
+    } catch {
+      return raw.replace(/\/+$/, '')
+    }
+  }
+  return typeof window !== 'undefined' ? window.location.origin : ''
+}
+
+export function ecosystemCurrentProductKey(pathname: string): EcosystemProductKey {
+  if (pathname.startsWith('/mata')) return 'mata'
+  if (pathname.startsWith('/maumahara')) return 'maumahara'
+  if (pathname.startsWith('/panui')) return 'panui'
+  return 'akomanga'
+}
+
 export function ecosystemSameOriginLinks(): EcosystemLink[] {
-  const o = typeof window !== 'undefined' ? window.location.origin : ''
+  const o = ecosystemShellOrigin()
   return [
     { key: 'akomanga', label: 'Akomanga', href: `${o}/` },
     { key: 'maumahara', label: 'Maumahara', href: `${o}/maumahara` },
@@ -11,7 +32,6 @@ export function ecosystemSameOriginLinks(): EcosystemLink[] {
   ]
 }
 
-/** Hide ecosystem switchers in embedded browsers (best-effort). */
 export function isLikelyInAppWebView(): boolean {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent || ''
