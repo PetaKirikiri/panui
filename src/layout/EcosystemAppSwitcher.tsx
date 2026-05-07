@@ -1,14 +1,10 @@
 import { useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import {
-  ecosystemCurrentProductKey,
-  ecosystemSameOriginLinks,
-  isLikelyInAppWebView,
-} from '../lib/ecosystemShell'
+import placeholderLogo from '../assets/placeholder-logo.png'
+import { ecosystemCurrentProductKey, ecosystemSameOriginLinks } from '../lib/ecosystemShell'
 
-/** Same layout as Akomanga/Mata/Maumahara; neutral gray tokens for this shell. */
 const SUMMARY_CLASS =
-  'inline-flex cursor-pointer list-none items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold tracking-tight text-gray-900 shadow-sm hover:bg-gray-50 [&::-webkit-details-marker]:hidden'
+  'flex min-h-[2.75rem] cursor-pointer list-none items-center gap-2.5 rounded-xl border border-gray-300 bg-white px-2.5 py-1.5 text-left shadow-md ring-1 ring-gray-200/70 hover:bg-gray-50 [&::-webkit-details-marker]:hidden'
 
 const MENU_CLASS =
   'absolute right-0 top-full z-[100] mt-1.5 min-w-[12rem] rounded-lg border border-gray-200 bg-white py-1 shadow-lg'
@@ -25,12 +21,9 @@ export function EcosystemAppSwitcher() {
   const detailsRef = useRef<HTMLDetailsElement>(null)
   const { pathname } = useLocation()
 
-  if (typeof navigator !== 'undefined' && isLikelyInAppWebView()) {
-    return null
-  }
-
   const links = ecosystemSameOriginLinks()
   const current = ecosystemCurrentProductKey(pathname)
+  const summaryLabel = links.find((item) => item.key === current)?.label ?? 'Pānui'
 
   const follow = (href: string, e: React.MouseEvent) => {
     if (isModifiedClick(e)) return
@@ -40,10 +33,13 @@ export function EcosystemAppSwitcher() {
   }
 
   return (
-    <details ref={detailsRef} className="relative shrink-0">
-      <summary className={SUMMARY_CLASS} aria-label="Products menu" aria-haspopup="menu">
-        <span>Products</span>
-        <span className="text-gray-500" aria-hidden>
+    <details ref={detailsRef} className="relative min-w-0 shrink-0">
+      <summary className={SUMMARY_CLASS} aria-label={`Switch product — current: ${summaryLabel}`} aria-haspopup="menu">
+        <img src={placeholderLogo} alt="" aria-hidden className="h-7 w-7 shrink-0 rounded-sm object-cover" />
+        <span className="min-w-0 max-w-[12rem] truncate text-lg font-semibold tracking-tight text-gray-900">
+          {summaryLabel}
+        </span>
+        <span className="shrink-0 text-gray-500" aria-hidden>
           ▾
         </span>
       </summary>

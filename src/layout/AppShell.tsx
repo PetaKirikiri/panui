@@ -4,7 +4,6 @@ import { ReaderViewModeProvider } from '../context/ReaderViewModeProvider'
 import { useReaderViewMode } from '../hooks/useReaderViewMode'
 import { AppSidebar } from './AppSidebar'
 import { EcosystemAppSwitcher } from './EcosystemAppSwitcher'
-import { PanuiProductBrand } from './PanuiProductBrand'
 
 function ReaderViewToolbar() {
   const location = useLocation()
@@ -62,13 +61,12 @@ export function AppShell() {
     <ReaderViewModeProvider>
       <div className="flex h-screen flex-col overflow-hidden bg-white">
         <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-gray-200 px-3 py-3">
-          <PanuiProductBrand />
+          <EcosystemAppSwitcher />
           <span className="hidden text-sm text-gray-500 sm:inline">
             Assistive bilingual reader
           </span>
           <span className="flex-1" />
           <ReaderViewToolbar />
-          <EcosystemAppSwitcher />
           {authLoading ? null : user ? (
             <>
               <span
