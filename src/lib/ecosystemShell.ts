@@ -19,7 +19,7 @@ export function ecosystemCurrentProductKey(pathname: string): EcosystemProductKe
   if (pathname.startsWith('/mata')) return 'mata'
   if (pathname.startsWith('/maumahara')) return 'maumahara'
   if (pathname.startsWith('/panui')) return 'panui'
-  return 'akomanga'
+  return 'panui'
 }
 
 export function ecosystemSameOriginLinks(): EcosystemLink[] {
